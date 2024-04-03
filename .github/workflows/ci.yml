@@ -8,12 +8,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: rustup target add aarch64-linux-android
       - name: Cargo fmt
         run: cargo fmt --all -- --check
       - name: Cargo clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --workspace --target aarch64-linux-android --all-targets -- -D warnings
       - name: Cargo test
-        run: cargo test --workspace
+        run: cargo test --workspace --target aarch64-linux-android
 
   rust-msrv:
     name: Build-test MSRV (1.74) with minimal crate dependencies
@@ -24,5 +25,6 @@ jobs:
       - name: Generate minimal-version dependencies
         run: cargo -Zminimal-versions generate-lockfile
       - uses: dtolnay/rust-toolchain@1.74.0
+      - run: rustup target add aarch64-linux-android
       - name: Cargo check
-        run: cargo check --workspace --all-targets
+        run: cargo check --workspace --target aarch64-linux-android --all-targets
