@@ -1,0 +1,10 @@
+[submodule "android-hardware-interfaces"]
+	path = android-hardware-interfaces
+	url = https://android.googlesource.com/platform/hardware/interfaces/
+	depth = 1
+	update = none
+[submodule "android-frameworks-base"]
+	path = android-frameworks-base
+	url = https://android.googlesource.com/platform/frameworks/base/
+	depth = 1
+	update = none
