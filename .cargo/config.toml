@@ -1,2 +1,5 @@
 [registries.traverse-pub]
 index = "sparse+https://cargo.cloudsmith.io/traverse-research/public-foked-releases/"
+
+[registry]
+default = "traverse-pub"

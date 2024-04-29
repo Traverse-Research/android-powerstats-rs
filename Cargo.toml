@@ -10,6 +10,7 @@ description = "Bindings to Android's `powerstats` services"
 include = ["src", "LICENSE"]
 categories = ["api-bindings", "hardware-support", "os", "os:android-apis"] # https://crates.io/category_slugs
 keywords = ["android", "odpm", "powerstats", "power", "energy"]
+registry = ["traverse-pub"]
 
 [dependencies]
 anyhow = "1"
