@@ -74,13 +74,13 @@ impl PowerStats {
             BackendSelection::VendorHardwareService => {
                 let descriptor = <BpPowerStats as IPowerStats>::get_descriptor();
                 let i =
-                    binder::get_interface::<dyn IPowerStats>(&format!("{}/default", descriptor))?;
+                    binder::check_interface::<dyn IPowerStats>(&format!("{}/default", descriptor))?;
                 Ok(Self {
                     backend: Backend::VendorHardwareService(i),
                 })
             }
             BackendSelection::SystemJavaService => {
-                let i = binder::get_interface::<dyn IPowerStatsService>("powerstats")?;
+                let i = binder::check_interface::<dyn IPowerStatsService>("powerstats")?;
                 Ok(Self {
                     backend: Backend::SystemJavaService(i),
                 })
