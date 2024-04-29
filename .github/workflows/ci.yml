@@ -13,18 +13,20 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Cargo clippy
         run: cargo clippy --workspace --target aarch64-linux-android --all-targets -- -D warnings
-      - name: Cargo test
-        run: cargo test --workspace --target aarch64-linux-android
+      # Can only be tested on Android
+      # - name: Cargo test
+      #   run: cargo test --workspace --target aarch64-linux-android
 
-  rust-msrv:
-    name: Build-test MSRV (1.74) with minimal crate dependencies
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
-      - name: Generate minimal-version dependencies
-        run: cargo -Zminimal-versions generate-lockfile
-      - uses: dtolnay/rust-toolchain@1.74.0
-      - run: rustup target add aarch64-linux-android
-      - name: Cargo check
-        run: cargo check --workspace --target aarch64-linux-android --all-targets
+  # Disabled because crates upstream of binder_ndk do not build with -Zminimal-versions
+  # rust-msrv:
+  #   name: Build-test MSRV (1.74) with minimal crate dependencies
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: dtolnay/rust-toolchain@nightly
+  #     - name: Generate minimal-version dependencies
+  #       run: cargo -Zminimal-versions generate-lockfile
+  #     - uses: dtolnay/rust-toolchain@1.74.0
+  #     - run: rustup target add aarch64-linux-android
+  #     - name: Cargo check
+  #       run: cargo check --workspace --target aarch64-linux-android --all-targets
