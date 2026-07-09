@@ -125,8 +125,6 @@ impl IResultReceiver for ReceiveSupportedPowerMonitors {
 
 #[derive(Debug)]
 pub(crate) struct PowerMonitorReadings {
-    // pub(crate) timestamp: Duration,
-    // pub(crate) energy_uws: i64,
     pub(crate) timestamps_ms: Vec<i64>,
     pub(crate) energy_uws: Vec<i64>,
 }

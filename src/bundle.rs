@@ -176,20 +176,17 @@ fn parcel_read_value(parcel: &BorrowedParcel<'_>, r#type: i32) -> Result<Object,
         VAL_BOOLEANARRAY => {
             // createBooleanArray()
             let n: i32 = parcel.read()?;
-            // dbg!(n);
             let avail = parcel.get_data_size() - parcel.get_data_position();
-            Ok(
-                if n >= 0 && n <= (avail / std::mem::size_of::<i32>() as i32) {
-                    let mut vec = Vec::with_capacity(n as usize);
-                    for _ in 0..n {
-                        let b: i32 = parcel.read()?;
-                        vec.push(b != 0);
-                    }
-                    Object::BooleanArray(vec)
-                } else {
-                    Object::Null
-                },
-            )
+            Ok(if n >= 0 && n <= (avail / size_of::<i32>() as i32) {
+                let mut vec = Vec::with_capacity(n as usize);
+                for _ in 0..n {
+                    let b: i32 = parcel.read()?;
+                    vec.push(b != 0);
+                }
+                Object::BooleanArray(vec)
+            } else {
+                Object::Null
+            })
         }
         VAL_CHARSEQUENCEARRAY => todo!("VAL_CHARSEQUENCEARRAY"),
         VAL_PERSISTABLEBUNDLE => todo!("VAL_PERSISTABLEBUNDLE"),
@@ -207,10 +204,8 @@ fn parcel_read_value(parcel: &BorrowedParcel<'_>, r#type: i32) -> Result<Object,
 /// https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/os/Parcel.java;l=4528;drc=190beaa49a35da1d9dcf66be9cfccfd23b0eb467
 fn parcel_read_value_type(parcel: &BorrowedParcel<'_>) -> Result<Object, StatusCode> {
     let t: i32 = parcel.read()?;
-    // dbg!(&t);
     if is_length_prefixed(t) {
         let length: i32 = parcel.read()?;
-        // dbg!(length);
         let start = parcel.get_data_position();
         let r = parcel_read_value(parcel, t)?;
         assert_eq!(parcel.get_data_position(), start + length);
@@ -239,15 +234,12 @@ pub fn parcel_read_string8(parcel: &BorrowedParcel<'_>) -> Result<String, Status
 
 impl Deserialize for Bundle {
     fn deserialize(parcel: &BorrowedParcel<'_>) -> Result<Self, StatusCode> {
-        // dbg!(parcel.get_data_size());
-
         // Parse nullability because of writeTypedObject
         // https://cs.android.com/android/platform/superproject/main/+/main:out/soong/.intermediates/frameworks/base/framework-minus-apex-intdefs/android_common/e18b8e8d84cb9f664aa09a397b08c165/xref50/srcjars.xref/com/android/internal/os/IResultReceiver.java;l=118;drc=190beaa49a35da1d9dcf66be9cfccfd23b0eb467
         let is_set: i32 = parcel.read()?;
         assert!(is_set == 1);
 
         let length: i32 = parcel.read()?;
-        // dbg!(length);
         assert!(length >= 0, "Bad length {length}");
         if length == 0 {
             return Ok(Self(HashMap::new())); // Empty
@@ -259,15 +251,12 @@ impl Deserialize for Bundle {
         let _magic: i32 = parcel.read()?;
         // let is_java_bundle = magic == BUNDLE_MAGIC;
         // let is_native_bundle = magic == BUNDLE_MAGIC_NATIVE;
-        // dbg!(is_java_bundle, is_native_bundle);
 
         // https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/os/BaseBundle.java;l=459;drc=190beaa49a35da1d9dcf66be9cfccfd23b0eb467
         let count: i32 = parcel.read()?;
-        // dbg!(count);
         let mut map = HashMap::new();
         for _ in 0..count {
             let str: String = parcel.read()?;
-            // dbg!(&str);
 
             // TODO: optimization for sorted parcels!
             map.insert(str, parcel_read_value_type(parcel)?);

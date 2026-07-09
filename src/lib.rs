@@ -92,7 +92,6 @@ impl PowerStats {
     pub fn energy_meters(&self) -> Result<Vec<EnergyMeter>> {
         match &self.backend {
             Backend::VendorHardwareService(s) => {
-                // let meters = s.getEnergyConsumerInfo()?;
                 let meters = s.getEnergyMeterInfo()?;
                 Ok(meters
                     .into_iter()
@@ -131,12 +130,11 @@ impl PowerStats {
         }
     }
 
-    // /// Only returns consumers (i.e. aggregated data from individual meters/rails/regulators for
-    // /// consumers like CPU clusters, GPU, etc), not individual meters on regulators.
+    /// Only returns consumers (i.e. aggregated data from individual meters/rails/regulators for
+    /// consumers like CPU clusters, GPU, etc), not individual meters on regulators.
     pub fn energy_consumers(&self) -> Result<Vec<EnergyConsumer>> {
         match &self.backend {
             Backend::VendorHardwareService(s) => {
-                // let meters = s.getEnergyConsumerInfo()?;
                 let meters = s.getEnergyConsumerInfo()?;
                 Ok(meters
                     .into_iter()
@@ -190,7 +188,8 @@ impl PowerStats {
         }
     }
 
-    // Same code
+    /// Generalized helper for power monitor readings from public [`Self::read_energy_meters()`] and
+    /// [`Self::read_energy_consumers()`] for [`Backend::SystemJavaService`].
     fn read_power_monitors(
         s: &Strong<dyn IPowerStatsService>,
         ids: &[i32],
