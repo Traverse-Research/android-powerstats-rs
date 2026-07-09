@@ -121,23 +121,74 @@ fn is_length_prefixed(r#type: i32) -> bool {
 
 fn parcel_read_value(parcel: &BorrowedParcel<'_>, r#type: i32) -> Result<Object, StatusCode> {
     match r#type {
-        VAL_NULL => todo!("VAL_NULL"),
-        VAL_STRING => todo!("VAL_STRING"),
-        VAL_INTEGER => todo!("VAL_INTEGER"),
-        VAL_MAP => todo!("VAL_MAP"),
-        VAL_BUNDLE => todo!("VAL_BUNDLE"),
-        VAL_PARCELABLE => todo!("VAL_PARCELABLE"),
-        VAL_SHORT => todo!("VAL_SHORT"),
-        VAL_LONG => todo!("VAL_LONG"),
-        VAL_FLOAT => todo!("VAL_FLOAT"),
-        VAL_DOUBLE => todo!("VAL_DOUBLE"),
-        VAL_BOOLEAN => todo!("VAL_BOOLEAN"),
-        VAL_CHARSEQUENCE => todo!("VAL_CHARSEQUENCE"),
-        VAL_LIST => todo!("VAL_LIST"),
-        VAL_SPARSEARRAY => todo!("VAL_SPARSEARRAY"),
-        VAL_BYTEARRAY => todo!("VAL_BYTEARRAY"),
-        VAL_STRINGARRAY => todo!("VAL_STRINGARRAY"),
-        VAL_IBINDER => todo!("VAL_IBINDER"),
+        VAL_NULL => {
+            eprintln!("Unhandled Parcel VAL_NULL");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_STRING => {
+            eprintln!("Unhandled Parcel VAL_STRING");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_INTEGER => {
+            eprintln!("Unhandled Parcel VAL_INTEGER");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_MAP => {
+            eprintln!("Unhandled Parcel VAL_MAP");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_BUNDLE => {
+            eprintln!("Unhandled Parcel VAL_BUNDLE");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_PARCELABLE => {
+            eprintln!("Unhandled Parcel VAL_PARCELABLE");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_SHORT => {
+            eprintln!("Unhandled Parcel VAL_SHORT");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_LONG => {
+            eprintln!("Unhandled Parcel VAL_LONG");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_FLOAT => {
+            eprintln!("Unhandled Parcel VAL_FLOAT");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_DOUBLE => {
+            eprintln!("Unhandled Parcel VAL_DOUBLE");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_BOOLEAN => {
+            eprintln!("Unhandled Parcel VAL_BOOLEAN");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_CHARSEQUENCE => {
+            eprintln!("Unhandled Parcel VAL_CHARSEQUENCE");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_LIST => {
+            eprintln!("Unhandled Parcel VAL_LIST");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_SPARSEARRAY => {
+            eprintln!("Unhandled Parcel VAL_SPARSEARRAY");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_BYTEARRAY => {
+            eprintln!("Unhandled Parcel VAL_BYTEARRAY");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_STRINGARRAY => {
+            eprintln!("Unhandled Parcel VAL_STRINGARRAY");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_IBINDER => {
+            eprintln!("Unhandled Parcel VAL_IBINDER");
+            Err(StatusCode::BAD_VALUE)
+        }
         VAL_PARCELABLEARRAY => {
             // readParcelableArrayInternal()
             let n: i32 = parcel.read()?;
@@ -159,8 +210,14 @@ fn parcel_read_value(parcel: &BorrowedParcel<'_>, r#type: i32) -> Result<Object,
             }
             Ok(Object::ParcelableArray(vec))
         }
-        VAL_OBJECTARRAY => todo!("VAL_OBJECTARRAY"),
-        VAL_INTARRAY => todo!("VAL_INTARRAY"),
+        VAL_OBJECTARRAY => {
+            eprintln!("Unhandled Parcel VAL_OBJECTARRAY");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_INTARRAY => {
+            eprintln!("Unhandled Parcel VAL_INTARRAY");
+            Err(StatusCode::BAD_VALUE)
+        }
         VAL_LONGARRAY => {
             // createLongArray()
             let n: i32 = parcel.read()?;
@@ -170,9 +227,18 @@ fn parcel_read_value(parcel: &BorrowedParcel<'_>, r#type: i32) -> Result<Object,
             }
             Ok(Object::LongArray(vec))
         }
-        VAL_BYTE => todo!("VAL_BYTE"),
-        VAL_SERIALIZABLE => todo!("VAL_SERIALIZABLE"),
-        VAL_SPARSEBOOLEANARRAY => todo!("VAL_SPARSEBOOLEANARRAY"),
+        VAL_BYTE => {
+            eprintln!("Unhandled Parcel VAL_BYTE");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_SERIALIZABLE => {
+            eprintln!("Unhandled Parcel VAL_SERIALIZABLE");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_SPARSEBOOLEANARRAY => {
+            eprintln!("Unhandled Parcel VAL_SPARSEBOOLEANARRAY");
+            Err(StatusCode::BAD_VALUE)
+        }
         VAL_BOOLEANARRAY => {
             // createBooleanArray()
             let n: i32 = parcel.read()?;
@@ -188,16 +254,46 @@ fn parcel_read_value(parcel: &BorrowedParcel<'_>, r#type: i32) -> Result<Object,
                 Object::Null
             })
         }
-        VAL_CHARSEQUENCEARRAY => todo!("VAL_CHARSEQUENCEARRAY"),
-        VAL_PERSISTABLEBUNDLE => todo!("VAL_PERSISTABLEBUNDLE"),
-        VAL_SIZE => todo!("VAL_SIZE"),
-        VAL_SIZEF => todo!("VAL_SIZEF"),
-        VAL_DOUBLEARRAY => todo!("VAL_DOUBLEARRAY"),
-        VAL_CHAR => todo!("VAL_CHAR"),
-        VAL_SHORTARRAY => todo!("VAL_SHORTARRAY"),
-        VAL_CHARARRAY => todo!("VAL_CHARARRAY"),
-        VAL_FLOATARRAY => todo!("VAL_FLOATARRAY"),
-        t => todo!("Unknown Parcel value type {t}"),
+        VAL_CHARSEQUENCEARRAY => {
+            eprintln!("Unhandled Parcel VAL_CHARSEQUENCEARRAY");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_PERSISTABLEBUNDLE => {
+            eprintln!("Unhandled Parcel VAL_PERSISTABLEBUNDLE");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_SIZE => {
+            eprintln!("Unhandled Parcel VAL_SIZE");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_SIZEF => {
+            eprintln!("Unhandled Parcel VAL_SIZEF");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_DOUBLEARRAY => {
+            eprintln!("Unhandled Parcel VAL_DOUBLEARRAY");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_CHAR => {
+            eprintln!("Unhandled Parcel VAL_CHAR");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_SHORTARRAY => {
+            eprintln!("Unhandled Parcel VAL_SHORTARRAY");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_CHARARRAY => {
+            eprintln!("Unhandled Parcel VAL_CHARARRAY");
+            Err(StatusCode::BAD_VALUE)
+        }
+        VAL_FLOATARRAY => {
+            eprintln!("Unhandled Parcel VAL_FLOATARRAY");
+            Err(StatusCode::BAD_VALUE)
+        }
+        t => {
+            eprintln!("Unknown Parcel value {t}");
+            Err(StatusCode::BAD_VALUE)
+        }
     }
 }
 
