@@ -52,6 +52,7 @@ impl<T: Parcelable + any::Any + fmt::Debug> ParcelableInstance for T {
 #[derive(Debug)]
 pub enum Object {
     Null,
+    Int(i32),
     ParcelableArray(Vec<Box<dyn ParcelableInstance>>),
     BooleanArray(Vec<bool>),
     LongArray(Vec<i64>),
@@ -130,10 +131,7 @@ fn parcel_read_value(parcel: &BorrowedParcel<'_>, r#type: i32) -> Result<Object,
             eprintln!("Unhandled Parcel VAL_STRING");
             Err(StatusCode::BAD_VALUE)
         }
-        VAL_INTEGER => {
-            eprintln!("Unhandled Parcel VAL_INTEGER");
-            Err(StatusCode::BAD_VALUE)
-        }
+        VAL_INTEGER => Ok(Object::Int(parcel.read()?)),
         VAL_MAP => {
             eprintln!("Unhandled Parcel VAL_MAP");
             Err(StatusCode::BAD_VALUE)

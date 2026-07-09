@@ -193,21 +193,23 @@ impl PowerStats {
 
     /// Generalized helper for power monitor readings from public [`Self::read_energy_meters()`] and
     /// [`Self::read_energy_consumers()`] for [`Backend::SystemJavaService`].
+    ///
+    /// Happens to return [`EnergyMeterReading`] simply because it never provides UID-based attribution.
     fn read_power_monitors(
         s: &Strong<dyn IPowerStatsService>,
         ids: &[i32],
-    ) -> Result<Vec<EnergyMeterReading>> {
+    ) -> Result<EnergyMeterReadings> {
         let (receiver, chan) = android_os_powerstatsservice::ReceivePowerMonitorReadings::new();
         let receiver = result_receiver::ResultReceiver::new(receiver);
         // TODO: The caller might wish to reuse the receiver?
 
         s.getPowerMonitorReadings(ids, &receiver)?;
-        let readings = chan.recv().unwrap();
+        let result = chan.recv().unwrap();
 
-        let result = readings
+        let readings = result
             .timestamps_ms
             .into_iter()
-            .zip(readings.energy_uws)
+            .zip(result.energy_uws)
             .map(|(t, e)| EnergyMeterReading {
                 timestamp: Duration::from_millis(t.try_into().unwrap()),
                 // TODO: Help, for meters the system service "conveniently" ignores the durationMs field?
@@ -218,40 +220,61 @@ impl PowerStats {
                 energy_uws: e,
             })
             .collect();
-        Ok(result)
+
+        Ok(EnergyMeterReadings {
+            readings,
+            granularity: result.granularity,
+        })
     }
 
     /// Returns a list of meter readings in the same order as the ids specified in `meter_ids`
-    pub fn read_energy_meters(&self, meter_ids: &[i32]) -> Result<Vec<EnergyMeterReading>> {
+    pub fn read_energy_meters(&self, meter_ids: &[i32]) -> Result<EnergyMeterReadings> {
         match &self.backend {
             Backend::VendorHardwareService(s) => {
                 let readings = s.readEnergyMeter(meter_ids)?;
-                let result = readings.into_iter().map(|m| m.into()).collect();
-                Ok(result)
+                let readings = readings.into_iter().map(|m| m.into()).collect();
+                Ok(EnergyMeterReadings {
+                    readings,
+                    granularity: None,
+                })
             }
             Backend::SystemJavaService(s) => Self::read_power_monitors(s, meter_ids),
         }
     }
 
     /// Returns a list of consumer readings in the same order as the ids specified in `consumer_ids`
-    pub fn read_energy_consumers(
-        &self,
-        consumer_ids: &[i32],
-    ) -> Result<Vec<EnergyConsumerReading>> {
+    pub fn read_energy_consumers(&self, consumer_ids: &[i32]) -> Result<EnergyConsumerReadings> {
         match &self.backend {
             Backend::VendorHardwareService(s) => {
                 let readings = s.getEnergyConsumed(consumer_ids)?;
-                let result = readings.into_iter().map(|e| e.into()).collect();
-                Ok(result)
+                let readings = readings.into_iter().map(|e| e.into()).collect();
+                Ok(EnergyConsumerReadings {
+                    readings,
+                    granularity: None,
+                })
             }
             Backend::SystemJavaService(s) => {
                 let monitors = Self::read_power_monitors(s, consumer_ids)?;
-                // As soon as the code was generalized, need arised for a separate type. Since the
-                // Java service doesn't provide most of the info anyway, just drop it
-                Ok(monitors.into_iter().map(|m| m.into()).collect())
+                // As soon as the code was generalized, need arose for a separate type. Since
+                // the Java service doesn't provide most of the info anyway, it repurposes
+                // EnergyMeterReading and has a widening conversion here:
+                Ok(monitors.into())
             }
         }
     }
+}
+
+#[doc(alias = "android.os.PowerMonitorReadings.PowerMonitorGranularity")]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum PowerMonitorGranularity {
+    /// PowerMonitorReadings have the default level of granularity, which may be coarse or fine as
+    /// determined by the implementation.
+    #[doc(alias = "GRANULARITY_UNSPECIFIED")]
+    Unspecified,
+    /// PowerMonitorReadings have a high level of granularity. This level of granularity is provided
+    /// to applications that have the `android.permission.ACCESS_FINE_POWER_MONITORS` permission.
+    #[doc(alias = "GRANULARITY_FINE")]
+    Fine,
 }
 
 #[doc(alias = "android.os.PowerMonitor")]
@@ -345,12 +368,21 @@ impl From<EnergyMeasurement> for EnergyMeterReading {
             durationMs,
             energyUWs,
         } = value;
-        EnergyMeterReading {
+        Self {
             timestamp: Duration::from_millis(timestampMs.try_into().unwrap()),
             duration: Some(Duration::from_millis(durationMs.try_into().unwrap())),
             energy_uws: energyUWs,
         }
     }
+}
+
+#[doc(alias = "android.os.PowerMonitorReadings")]
+#[doc(alias = "android.hardware.power.stats.EnergyMeasurement")]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EnergyMeterReadings {
+    pub readings: Vec<EnergyMeterReading>,
+    /// Available since Android 16 on [`Backend::SystemJavaService`] only
+    pub granularity: Option<PowerMonitorGranularity>,
 }
 
 #[doc(alias = "android.os.PowerMonitorReadings")]
@@ -393,12 +425,37 @@ impl From<EnergyMeterReading> for EnergyConsumerReading {
                 unreachable!()
             };
 
-            EnergyConsumerReading {
+            Self {
                 timestamp,
                 energy_uws,
                 // Unavailable
                 attribution: vec![],
             }
+        }
+    }
+}
+
+#[doc(alias = "android.os.PowerMonitorReadings")]
+#[doc(alias = "android.hardware.power.stats.EnergyConsumerResult")]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EnergyConsumerReadings {
+    pub readings: Vec<EnergyConsumerReading>,
+    /// Available since Android 16 on [`Backend::SystemJavaService`] only.  While
+    /// [`Backend::VendorHardwareService`] always returns accurate and unmodified data
+    /// the system service returns fresh data once every 20 seconds unless the (private)
+    /// app has `android.permission.ACCESS_FINE_POWER_MONITORS` which sets this to
+    /// [`PowerMonitorGranularity::Fine`] and provides fresh data every 250ms.
+    ///
+    /// See also <https://cs.android.com/android/_/android/platform/frameworks/base/+/fabf8e4c3d66e1e7de16169b1d21c434e23ef410>
+    pub granularity: Option<PowerMonitorGranularity>,
+}
+
+impl From<EnergyMeterReadings> for EnergyConsumerReadings {
+    fn from(meters: EnergyMeterReadings) -> Self {
+        let readings = meters.readings.into_iter().map(|m| m.into()).collect();
+        Self {
+            readings,
+            granularity: meters.granularity,
         }
     }
 }
@@ -454,7 +511,7 @@ pub fn sample_gpu_meters() {
             let consumer_ids = gpu_consumers.iter().map(|c| c.id).collect::<Vec<_>>();
             let consumer_readings = stats.read_energy_consumers(&consumer_ids)?;
             println!("{s:?} GPU consumer reading(s): {:?}", consumer_readings);
-            if let Some(gpu0) = consumer_readings.first() {
+            if let Some(gpu0) = consumer_readings.readings.first() {
                 if !gpu0.attribution.is_empty() {
                     println!("TODO: Have attribution info, read UID for current process!")
                 }

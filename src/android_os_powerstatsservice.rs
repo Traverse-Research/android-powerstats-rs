@@ -14,6 +14,7 @@ use crate::{
         ParcelableInstance,
     },
     result_receiver::{IResultReceiver, ResultReceiver},
+    PowerMonitorGranularity,
 };
 
 #[path = "android/os/IPowerStatsService.rs"]
@@ -117,6 +118,10 @@ impl IResultReceiver for ReceiveSupportedPowerMonitors {
             panic!("Must have ParcelableArray")
         };
 
+        if data.0.len() != 1 {
+            eprintln!("Did not expect more than one element out of getSupportedPowerMonitors, got {data:?}");
+        }
+
         let result = monitors
             .iter()
             .map(|monitor| {
@@ -131,10 +136,17 @@ impl IResultReceiver for ReceiveSupportedPowerMonitors {
     }
 }
 
+pub(crate) const GRANULARITY_UNSPECIFIED: i32 = 0;
+pub(crate) const GRANULARITY_FINE: i32 = 1;
+
 #[derive(Debug)]
 pub(crate) struct PowerMonitorReadings {
     pub(crate) timestamps_ms: Vec<i64>,
     pub(crate) energy_uws: Vec<i64>,
+    /// Available since Android 16
+    ///
+    /// One of [`GRANULARITY_UNSPECIFIED`] or [`GRANULARITY_FINE`].
+    pub(crate) granularity: Option<PowerMonitorGranularity>,
 }
 
 pub(crate) struct ReceivePowerMonitorReadings(Sender<PowerMonitorReadings>);
@@ -154,11 +166,31 @@ impl IResultReceiver for ReceivePowerMonitorReadings {
         let Object::LongArray(energy) = &data.0[powerstatsservice::KEY_ENERGY] else {
             panic!("Must have LongArray")
         };
+        // Optional, added in Android 16
+        // https://android.googlesource.com/platform/frameworks/base/+/fabf8e4c3d66e1e7de16169b1d21c434e23ef410
+        let granularity = data.0.get(powerstatsservice::KEY_GRANULARITY).map(|g| {
+            let &Object::Int(g) = g else {
+                panic!("Must have Int")
+            };
+            match g {
+                GRANULARITY_UNSPECIFIED => PowerMonitorGranularity::Unspecified,
+                GRANULARITY_FINE => PowerMonitorGranularity::Fine,
+                x => todo!("Unknown granularity {x}"),
+            }
+        });
+
+        let exp = if granularity.is_some() { 3 } else { 2 };
+        if data.0.len() != exp {
+            eprintln!(
+                "Did not expect more than {exp} element out of getPowerMonitorReadings, got {data:?}"
+            );
+        }
 
         self.0
             .send(PowerMonitorReadings {
                 timestamps_ms: timestamps.clone(),
                 energy_uws: energy.clone(),
+                granularity,
             })
             .unwrap();
 
