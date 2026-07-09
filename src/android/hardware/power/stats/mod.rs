@@ -1,10 +1,11 @@
 #![allow(
     clippy::derivable_impls,
-    non_snake_case,
-    clippy::needless_lifetimes,
-    unused_mut,
-    unused_imports,
     clippy::identity_op,
+    clippy::needless_lifetimes,
+    non_snake_case,
+    unexpected_cfgs,
+    unused_imports,
+    unused_mut,
     unused_qualifications
 )]
 
@@ -27,7 +28,7 @@ pub(crate) mod mangled {
     pub(crate) use super::EnergyConsumerResult::mangled::*;
     pub(crate) use super::EnergyConsumerType::mangled::*;
     pub(crate) use super::EnergyMeasurement::mangled::*;
-    // pub(crate) use super::IPowerStats::mangled::*;
+    pub(crate) use super::IPowerStats::mangled::*;
     pub(crate) use super::PowerEntity::mangled::*;
     pub(crate) use super::State::mangled::*;
     pub(crate) use super::StateResidency::mangled::*;

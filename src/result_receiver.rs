@@ -4,15 +4,23 @@ use binder::{
 };
 
 #[path = "com/android/internal/os/IResultReceiver.rs"]
-#[allow(unused_qualifications, clippy::identity_op)]
+#[expect(
+    clippy::identity_op,
+    clippy::needless_lifetimes,
+    dead_code,
+    unexpected_cfgs,
+    unused_imports,
+    unused_qualifications
+)]
 mod iresultreceiver;
 
 pub use iresultreceiver::*;
 
+#[expect(unused_imports)]
 pub(crate) mod mangled {
-    // pub(crate) use super::iresultreceiver::mangled::*;
+    pub(crate) use super::iresultreceiver::mangled::*;
 
-    #[allow(non_camel_case_types)]
+    #[expect(non_camel_case_types)]
     pub(crate) type _7_android_2_os_14_ResultReceiver = super::ResultReceiver;
 }
 

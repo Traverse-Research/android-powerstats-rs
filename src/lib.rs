@@ -1,5 +1,8 @@
 #![warn(unused_qualifications)]
 
+// For generated code
+extern crate alloc;
+
 use std::{fmt, str::FromStr, time::Duration};
 
 use android_hardware_power_stats::{

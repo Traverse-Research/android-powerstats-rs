@@ -17,12 +17,20 @@ use crate::{
 };
 
 #[path = "android/os/IPowerStatsService.rs"]
-#[allow(dead_code, clippy::identity_op, unused_imports, unused_qualifications)]
+#[expect(
+    clippy::identity_op,
+    clippy::needless_lifetimes,
+    dead_code,
+    unexpected_cfgs,
+    unused_imports,
+    unused_qualifications
+)]
 pub mod powerstatsservice;
 
-// pub(crate) mod mangled {
-//     pub(crate) use super::powerstatsservice::mangled::*;
-// }
+#[expect(unused_imports)]
+pub(crate) mod mangled {
+    pub(crate) use super::powerstatsservice::mangled::*;
+}
 
 pub use powerstatsservice::IPowerStatsService;
 

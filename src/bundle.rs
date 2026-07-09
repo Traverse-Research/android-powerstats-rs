@@ -48,6 +48,7 @@ impl<T: Parcelable + any::Any + fmt::Debug> ParcelableInstance for T {
 }
 
 // #[derive(Debug, PartialEq, Hash)]
+#[expect(dead_code, reason = "Not exposed publicly yet")]
 #[derive(Debug)]
 pub enum Object {
     Null,
