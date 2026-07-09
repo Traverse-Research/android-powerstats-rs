@@ -95,6 +95,8 @@ impl PowerStats {
     pub fn energy_meters(&self) -> Result<Vec<EnergyMeter>> {
         match &self.backend {
             Backend::VendorHardwareService(s) => {
+                // dbg!(s.getPowerEntityInfo());
+                // dbg!(s.getStateResidency(&[0]));
                 let meters = s.getEnergyMeterInfo()?;
                 Ok(meters
                     .into_iter()

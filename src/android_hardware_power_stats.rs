@@ -8,11 +8,10 @@ pub use powerstats::EnergyConsumerResult::*;
 pub use powerstats::EnergyConsumerType::*;
 pub use powerstats::EnergyMeasurement::*;
 pub use powerstats::IPowerStats::*;
-// TODO: Currently unused / unexposed
-// pub use powerstats::PowerEntity::*;
-// pub use powerstats::State::*;
-// pub use powerstats::StateResidency::*;
-// pub use powerstats::StateResidencyResult::*;
+pub use powerstats::PowerEntity::*;
+pub use powerstats::State::*;
+pub use powerstats::StateResidency::*;
+pub use powerstats::StateResidencyResult::*;
 
 pub(crate) mod mangled {
     pub(crate) use super::powerstats::mangled::*;
