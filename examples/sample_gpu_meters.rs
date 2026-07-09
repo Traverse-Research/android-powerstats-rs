@@ -19,31 +19,24 @@ pub fn main() -> Result<()> {
             }
         };
 
-        let gpu_meters = stats
-            .energy_meters()?
-            .into_iter()
-            .filter(|m| m.subsystem == "GPU")
-            .collect::<Vec<_>>();
-        let gpu_consumers = stats
-            .energy_consumers()?
-            .into_iter()
-            .filter(|c| c.r#type == EnergyConsumerType::Other && c.name == "GPU")
-            .collect::<Vec<_>>();
-        println!("{s:?} GPU meter(s): {:?}", gpu_meters);
-        println!("{s:?} GPU consumer(s): {:?}", gpu_consumers);
+        let gpu_meters = stats.energy_meters()?;
+        // .into_iter()
+        // .filter(|m| m.subsystem == "GPU")
+        // .collect::<Vec<_>>();
+        let gpu_consumers = stats.energy_consumers()?;
+        // .into_iter()
+        // .filter(|c| c.r#type == EnergyConsumerType::Other && c.name == "GPU")
+        // .collect::<Vec<_>>();
+        println!("{s:?} meter(s): {:?}", gpu_meters);
+        println!("{s:?} consumer(s): {:?}", gpu_consumers);
 
         let meter_ids = gpu_meters.iter().map(|m| m.id).collect::<Vec<_>>();
         let meter_readings = stats.read_energy_meters(&meter_ids)?;
-        println!("{s:?} GPU meter reading(s): {:?}", meter_readings);
+        println!("{s:?} meter reading(s): {:?}", meter_readings);
 
         let consumer_ids = gpu_consumers.iter().map(|c| c.id).collect::<Vec<_>>();
         let consumer_readings = stats.read_energy_consumers(&consumer_ids)?;
-        println!("{s:?} GPU consumer reading(s): {:?}", consumer_readings);
-        if let Some(gpu0) = consumer_readings.readings.first() {
-            if !gpu0.attribution.is_empty() {
-                println!("TODO: Have attribution info, read UID for current process!")
-            }
-        }
+        println!("{s:?} consumer reading(s): {:?}", consumer_readings);
     }
 
     Ok(())
