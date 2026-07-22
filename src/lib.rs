@@ -3,15 +3,19 @@
 // For generated code
 extern crate alloc;
 
-use std::{fmt, str::FromStr, time::Duration};
+use std::{fmt, str::FromStr, sync::mpsc::Receiver, time::Duration};
 
 use android_hardware_power_stats::{
     BpPowerStats, Channel, EnergyConsumerResult, EnergyMeasurement, IPowerStats,
 };
-use android_os_powerstatsservice::{IPowerStatsService, PowerMonitorType};
+use android_os_powerstatsservice::{
+    IPowerStatsService, PowerMonitorReadings, PowerMonitorType, ReceivePowerMonitorReadings,
+};
 use anyhow::Result;
 use binder::Strong;
 use log::warn;
+
+use crate::result_receiver::ResultReceiver;
 
 mod android_hardware_power_stats;
 mod android_os_powerstatsservice;
@@ -26,14 +30,27 @@ pub(crate) mod mangled {
 
 enum Backend {
     VendorHardwareService(Strong<dyn IPowerStats>),
-    SystemJavaService(Strong<dyn IPowerStatsService>),
+    /// Caches the `powerstats` service alongside a single [`ResultReceiver`] callback binder (and
+    /// its channel), reused across every read instead of created afresh per call: the latter floods
+    /// `system_server`'s `BinderProxy` accounting and, under high-rate polling, gets the caller
+    /// killed with "Too many Binders sent to SYSTEM.".
+    ///
+    /// Reuse is sound because the mpsc [`Receiver`] is `!Sync`, making this backend `!Sync` too, so
+    /// reads can never run concurrently. `getPowerMonitorReadings()` is in turn synchronous (the
+    /// service invokes the callback before returning), hence each call `recv()`s exactly the one
+    /// reading the service `send()`s.
+    SystemJavaService {
+        service: Strong<dyn IPowerStatsService>,
+        receiver: ResultReceiver,
+        chan: Receiver<PowerMonitorReadings>,
+    },
 }
 
 impl fmt::Debug for Backend {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut b = match self {
             Backend::VendorHardwareService(s) => s.as_binder(),
-            Backend::SystemJavaService(s) => s.as_binder(),
+            Backend::SystemJavaService { service, .. } => service.as_binder(),
         };
         f.debug_struct("Backend")
             .field("descriptor", &b.get_class().unwrap().get_descriptor())
@@ -83,9 +100,15 @@ impl PowerStats {
                 })
             }
             BackendSelection::SystemJavaService => {
-                let i = binder::check_interface::<dyn IPowerStatsService>("powerstats")?;
+                let service = binder::check_interface::<dyn IPowerStatsService>("powerstats")?;
+                let (receiver, chan) = ReceivePowerMonitorReadings::new();
+                let receiver = ResultReceiver::new(receiver);
                 Ok(Self {
-                    backend: Backend::SystemJavaService(i),
+                    backend: Backend::SystemJavaService {
+                        service,
+                        receiver,
+                        chan,
+                    },
                 })
             }
         }
@@ -111,8 +134,8 @@ impl PowerStats {
                     )
                     .collect())
             }
-            Backend::SystemJavaService(s) => {
-                let monitors = s.receive_supported_power_monitors()?;
+            Backend::SystemJavaService { service, .. } => {
+                let monitors = service.receive_supported_power_monitors()?;
 
                 Ok(monitors
                     .into_iter()
@@ -156,8 +179,8 @@ impl PowerStats {
                     )
                     .collect())
             }
-            Backend::SystemJavaService(s) => {
-                let monitors = s.receive_supported_power_monitors()?;
+            Backend::SystemJavaService { service, .. } => {
+                let monitors = service.receive_supported_power_monitors()?;
 
                 Ok(monitors
                     .into_iter()
@@ -196,14 +219,12 @@ impl PowerStats {
     ///
     /// Happens to return [`EnergyMeterReading`] simply because it never provides UID-based attribution.
     fn read_power_monitors(
-        s: &Strong<dyn IPowerStatsService>,
+        service: &Strong<dyn IPowerStatsService>,
+        receiver: &ResultReceiver,
+        chan: &Receiver<PowerMonitorReadings>,
         ids: &[i32],
     ) -> Result<EnergyMeterReadings> {
-        let (receiver, chan) = android_os_powerstatsservice::ReceivePowerMonitorReadings::new();
-        let receiver = result_receiver::ResultReceiver::new(receiver);
-        // TODO: The caller might wish to reuse the receiver?
-
-        s.getPowerMonitorReadings(ids, &receiver)?;
+        service.getPowerMonitorReadings(ids, receiver)?;
         let result = chan.recv().unwrap();
 
         let readings = result
@@ -238,7 +259,11 @@ impl PowerStats {
                     granularity: None,
                 })
             }
-            Backend::SystemJavaService(s) => Self::read_power_monitors(s, meter_ids),
+            Backend::SystemJavaService {
+                service,
+                receiver,
+                chan,
+            } => Self::read_power_monitors(service, receiver, chan, meter_ids),
         }
     }
 
@@ -253,8 +278,12 @@ impl PowerStats {
                     granularity: None,
                 })
             }
-            Backend::SystemJavaService(s) => {
-                let monitors = Self::read_power_monitors(s, consumer_ids)?;
+            Backend::SystemJavaService {
+                service,
+                receiver,
+                chan,
+            } => {
+                let monitors = Self::read_power_monitors(service, receiver, chan, consumer_ids)?;
                 // As soon as the code was generalized, need arose for a separate type. Since
                 // the Java service doesn't provide most of the info anyway, it repurposes
                 // EnergyMeterReading and has a widening conversion here:
